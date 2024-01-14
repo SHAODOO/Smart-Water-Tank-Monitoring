@@ -1,13 +1,3 @@
-/*!
- * @file  SEN0204.ino
- * @brief  This example is to get liquid level. (Liquid Level Sensor-XKC-Y25-T12V)
- * @copyright  Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
- * @license  The MIT License (MIT)
- * @author  jackli(Jack.li@dfrobot.com)
- * @version  V1.0
- * @date  2016-1-30
- */
-
 #include <WiFi.h>
 #include "DFRobot_ESP_PH.h"
 
@@ -69,6 +59,7 @@ void loop()
   medWaterLevel = digitalRead(medLevelLiquidSensorPin);
   highWaterLevel = digitalRead(highLevelLiquidSensorPin);
 
+  //TO DO LIST - Broken Sensor Detecting
   if (lowWaterLevel == 0 && medWaterLevel == 0 && highWaterLevel == 0) 
     waterLevel = 0; // No water
   else if (lowWaterLevel == 1 && medWaterLevel == 0 && highWaterLevel == 0) 
