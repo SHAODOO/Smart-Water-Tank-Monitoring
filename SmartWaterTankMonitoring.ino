@@ -9,6 +9,9 @@
  */
 
 #include <WiFi.h>
+#include "DFRobot_ESP_PH.h"
+
+DFRobot_ESP_PH ph;
 
 //wifi info
 const char* ssid = "cs-mtg-room";
@@ -18,13 +21,15 @@ const char* password = "bilik703";
 const int lowLevelLiquidSensorPin = 38;
 const int medLevelLiquidSensorPin = 39;
 const int highLevelLiquidSensorPin = 40;
-//const int analogPhMeter == ;
+const int analogPhMeterPin = A0;
 
 //define and initialize variables
 bool lowWaterLevel = 0;
 bool medWaterLevel = 0;
 bool highWaterLevel = 0;
 int waterLevel = 0;
+float voltage = 0;
+float waterPh = 0;
 
 void setupWifi() {
 
@@ -52,6 +57,7 @@ void setup()
 {
   Serial.begin(9600);
   setupWifi();
+  ph.begin();
   pinMode(lowLevelLiquidSensorPin, INPUT);
   pinMode(medLevelLiquidSensorPin, INPUT);
   pinMode(highLevelLiquidSensorPin, INPUT);
@@ -72,6 +78,11 @@ void loop()
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 1) 
     waterLevel = 3; // High water level
   
+  voltage = analogRead(analogPhMeterPin) / 4096.0 * 3300; // read the voltage
+  waterPh = ph.readPH(voltage); // convert voltage to pH without temperature compensation
+  Serial.print("pH:");
+  Serial.println(waterPh);
+
   Serial.print("Water level = "); 
   Serial.println(waterLevel);
   delay(500);
