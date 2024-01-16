@@ -20,6 +20,7 @@ const int medLevelLiquidSensorPin = 39;
 const int highLevelLiquidSensorPin = 40;
 const int analogPhMeterPin = A0;
 const int dhtSensorPin = 42;
+#define buttonPin 14
 
 //input sensor
 #define DHTTYPE DHT11
@@ -34,6 +35,9 @@ int temperature = 0;
 float voltage = 0;
 float waterPh = 0;
 float humidity = 0;
+bool waterFillingInProgress = false;
+bool pauseWaterFilling = false;
+bool sameState = false;
 
 
 void setupWifi() {
@@ -67,6 +71,7 @@ void setup()
   pinMode(lowLevelLiquidSensorPin, INPUT);
   pinMode(medLevelLiquidSensorPin, INPUT);
   pinMode(highLevelLiquidSensorPin, INPUT);
+  pinMode(buttonPin, INPUT);
   myServo.attach(21);
   
 }
@@ -77,6 +82,33 @@ void loop()
   medWaterLevel = digitalRead(medLevelLiquidSensorPin);
   highWaterLevel = digitalRead(highLevelLiquidSensorPin);
 
+  if (digitalRead(buttonPin) == LOW)
+  {
+    sameState = false;
+  }
+
+  if(digitalRead(buttonPin) == HIGH)
+  {
+    if (sameState == false)
+    {
+      if (pauseWaterFilling == true)
+      {
+        pauseWaterFilling = false;
+        //put light off
+      }
+
+      if(waterFillingInProgress == true)
+      {
+        myServo.write(180);
+        waterFillingInProgress = false;
+        pauseWaterFilling = true;
+        //put light on
+      }
+      sameState = true;
+    }
+  
+  }
+
   //TO DO LIST - Broken Sensor Detecting
   if (lowWaterLevel == 0 && medWaterLevel == 0 && highWaterLevel == 0) 
     waterLevel = 0; // No water
@@ -85,13 +117,17 @@ void loop()
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 0) 
   {
       waterLevel = 2; // Medium water level
-      myServo.write(0);
+      if (!pauseWaterFilling){
+        myServo.write(0);
+        waterFillingInProgress = true;
+      }
   }
     
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 1) 
   {
     waterLevel = 3; // High water level
     myServo.write(180);
+    waterFillingInProgress = false; 
   }  
   
   voltage = analogRead(analogPhMeterPin) / 4096.0 * 3300; // read the voltage
@@ -107,5 +143,10 @@ void loop()
   Serial.println(temperature);
   Serial.print("Humidity in the tank: "); 
   Serial.println(humidity);
+  Serial.print("pause:");
+  Serial.println(pauseWaterFilling);
+  Serial.print("filling:");
+  Serial.println(waterFillingInProgress);
+  
   delay(500);
 }
