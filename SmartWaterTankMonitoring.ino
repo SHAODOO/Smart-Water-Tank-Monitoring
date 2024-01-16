@@ -1,7 +1,14 @@
+//Analog pH Meter power and ground got issue need to plog out and plugin
+
 #include <WiFi.h>
 #include "DFRobot_ESP_PH.h"
+#include <ESP32Servo.h>
+#include "DHT.h"
 
 DFRobot_ESP_PH ph;
+
+//define servo motor
+Servo myServo;
 
 //wifi info
 const char* ssid = "cs-mtg-room";
@@ -12,14 +19,22 @@ const int lowLevelLiquidSensorPin = 38;
 const int medLevelLiquidSensorPin = 39;
 const int highLevelLiquidSensorPin = 40;
 const int analogPhMeterPin = A0;
+const int dhtSensorPin = 42;
+
+//input sensor
+#define DHTTYPE DHT11
+DHT dht(dhtSensorPin, DHTTYPE);
 
 //define and initialize variables
 bool lowWaterLevel = 0;
 bool medWaterLevel = 0;
 bool highWaterLevel = 0;
 int waterLevel = 0;
+int temperature = 0;
 float voltage = 0;
 float waterPh = 0;
+float humidity = 0;
+
 
 void setupWifi() {
 
@@ -48,9 +63,12 @@ void setup()
   Serial.begin(9600);
   setupWifi();
   ph.begin();
+  dht.begin();
   pinMode(lowLevelLiquidSensorPin, INPUT);
   pinMode(medLevelLiquidSensorPin, INPUT);
   pinMode(highLevelLiquidSensorPin, INPUT);
+  myServo.attach(21);
+  
 }
 
 void loop()
@@ -65,16 +83,29 @@ void loop()
   else if (lowWaterLevel == 1 && medWaterLevel == 0 && highWaterLevel == 0) 
     waterLevel = 1; // Low water level
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 0) 
-    waterLevel = 2; // Medium water level
+  {
+      waterLevel = 2; // Medium water level
+      myServo.write(0);
+  }
+    
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 1) 
+  {
     waterLevel = 3; // High water level
+    myServo.write(180);
+  }  
   
   voltage = analogRead(analogPhMeterPin) / 4096.0 * 3300; // read the voltage
   waterPh = ph.readPH(voltage); // convert voltage to pH without temperature compensation
+  temperature = dht.readTemperature();
+  humidity = dht.readHumidity();
+
   Serial.print("pH:");
   Serial.println(waterPh);
-
   Serial.print("Water level = "); 
   Serial.println(waterLevel);
+  Serial.print("Temperature in the tank:");
+  Serial.println(temperature);
+  Serial.print("Humidity in the tank: "); 
+  Serial.println(humidity);
   delay(500);
 }
