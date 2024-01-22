@@ -40,6 +40,7 @@ float humidity = 0;
 bool waterFillingInProgress = false;
 bool pauseWaterFilling = false;
 bool sameState = false;
+bool serverEmergencyStop = false;
 
 //define device id
 const char* dhtSensorId = "7f4427ef-afa4-4d08-9d7a-bec2d13f5368";  
@@ -105,7 +106,11 @@ void triggerActuator_callback(const char* actuatorDeviceId, const char* actuator
     Serial.println(commandValue);
 
     int angle = (int)commandValue;
-    myServo.write(angle);
+    if (angle == 87)
+    {
+      serverEmergencyStop = true;
+    }
+
     voneClient.publishActuatorStatusEvent(actuatorDeviceId, actuatorCommand, errorMsg.c_str(), true);//publish actuator status
   }
   else
@@ -143,7 +148,7 @@ void loop()
     sameState = false;
   }
 
-  if(digitalRead(buttonPin) == HIGH)
+  if(digitalRead(buttonPin) == HIGH || serverEmergencyStop == true)
   {
     if (sameState == false)
     {
@@ -162,13 +167,24 @@ void loop()
       }
     }
       sameState = true;
+      serverEmergencyStop = false;
   }
 
   //TO DO LIST - Broken Sensor Detecting
-  if (lowWaterLevel == 0 && medWaterLevel == 0 && highWaterLevel == 0) 
+  if (lowWaterLevel == 0 && medWaterLevel == 0 && highWaterLevel == 0) {
     waterLevel = 0; // No water
-  else if (lowWaterLevel == 1 && medWaterLevel == 0 && highWaterLevel == 0) 
+    if (!pauseWaterFilling){
+        myServo.write(0);
+        waterFillingInProgress = true;
+    }
+  }
+  else if (lowWaterLevel == 1 && medWaterLevel == 0 && highWaterLevel == 0) {
     waterLevel = 1; // Low water level
+    if (!pauseWaterFilling){
+        myServo.write(0);
+        waterFillingInProgress = true;
+      }
+  }    
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 0) 
   {
       waterLevel = 2; // Medium water level
