@@ -6,7 +6,7 @@
 
 const char* ssid = "cs-mtg-room";
 const char* password = "bilik703";
-const char *mqttServer = "34.172.68.58"; 
+const char *mqttServer = "35.240.197.170"; 
 const int mqttPort = 1883;
 const char *mqttTopic = "SmartWaterTankMonitoring";
 
