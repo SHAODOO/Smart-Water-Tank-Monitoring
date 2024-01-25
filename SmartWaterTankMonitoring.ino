@@ -4,14 +4,12 @@
 #include <PubSubClient.h>
 #include "DHT.h"
 
-//wifi info
 const char* ssid = "cs-mtg-room";
 const char* password = "bilik703";
-const char *MQTT_SERVER = "34.172.68.58"; // your VM instance public IP address
-const int MQTT_PORT = 1883;
-const char *MQTT_TOPIC = "iot"; // MQTT topic
- 
-//Used Pins
+const char *mqttServer = "34.172.68.58"; 
+const int mqttPort = 1883;
+const char *mqttTopic = "SmartWaterTankMonitoring";
+
 const int lowLevelLiquidSensorPin = 38;
 const int medLevelLiquidSensorPin = 39;
 const int highLevelLiquidSensorPin = 40;
@@ -21,18 +19,13 @@ const int buttonPin = 14;
 const int servoMotorPin = 47;
 const int rainSensorPin = 4;
 
-//input sensor
 #define DHTTYPE DHT11
 DHT dht(dhtSensorPin, DHTTYPE);
 WiFiClient espClient;
 PubSubClient client(espClient);
-
 DFRobot_ESP_PH ph;
-
-//define servo motor
 Servo myServo;
 
-//define and initialize variables
 bool lowWaterLevel = 0;
 bool medWaterLevel = 0;
 bool highWaterLevel = 0;
@@ -48,9 +41,8 @@ bool serverEmergencyStop = false;
 int waterLeakage = 0;
 
 void setupWifi() {
-
   delay(10);
-  // We start by connecting to a WiFi network
+  
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
@@ -80,7 +72,7 @@ void setup()
   pinMode(buttonPin, INPUT);
   pinMode(rainSensorPin, INPUT);
   myServo.attach(servoMotorPin);  
-  client.setServer(MQTT_SERVER, MQTT_PORT);
+  client.setServer(mqttServer, mqttPort);
 }
 
 void reconnect()
@@ -136,14 +128,14 @@ void loop()
   }
 
   if (lowWaterLevel == 0 && medWaterLevel == 0 && highWaterLevel == 0) {
-    waterLevel = 0; // No water
+    waterLevel = 0; 
     if (!pauseWaterFilling){
         myServo.write(0);
         waterFillingInProgress = true;
     }
   }
   else if (lowWaterLevel == 1 && medWaterLevel == 0 && highWaterLevel == 0) {
-    waterLevel = 1; // Low water level
+    waterLevel = 1; 
     if (!pauseWaterFilling){
         myServo.write(0);
         waterFillingInProgress = true;
@@ -151,7 +143,7 @@ void loop()
   }    
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 0) 
   {
-      waterLevel = 2; // Medium water level
+      waterLevel = 2; 
       if (!pauseWaterFilling){
         myServo.write(0);
         waterFillingInProgress = true;
@@ -159,13 +151,13 @@ void loop()
   }    
   else if (lowWaterLevel == 1 && medWaterLevel == 1 && highWaterLevel == 1) 
   {
-    waterLevel = 3; // High water level
+    waterLevel = 3;
     myServo.write(180);
     waterFillingInProgress = false; 
   }  
   
-  voltage = analogRead(analogPhMeterPin) / 4096.0 * 3300; // read the voltage
-  waterPh = ph.readPH(voltage); // convert voltage to pH without temperature compensation
+  voltage = analogRead(analogPhMeterPin) / 4096.0 * 3300;
+  waterPh = ph.readPH(voltage); 
   temperature = dht.readTemperature();
   humidity = dht.readHumidity();
   waterLeakage = !digitalRead(rainSensorPin);
@@ -190,9 +182,8 @@ void loop()
       reconnect();
   }
   client.loop();
-  delay(5000); // adjust the delay according to your requirements
+  delay(5000); 
 
-  // Format float values with 2 decimal places
   char temperaturePayload[10];
   char humidityPayload[10];
   char waterPhPayload[10]; 
@@ -201,15 +192,14 @@ void loop()
   sprintf(humidityPayload, "%.2f", humidity);
   sprintf(waterPhPayload, "%.2f", waterPh);
 
-  // Publish the formatted values
-  client.publish(MQTT_TOPIC "/LowWaterLevel", String(lowWaterLevel).c_str());
-  client.publish(MQTT_TOPIC "/MedWaterLevel", String(medWaterLevel).c_str());
-  client.publish(MQTT_TOPIC "/HighWaterLevel", String(highWaterLevel).c_str());
-  client.publish(MQTT_TOPIC "/WaterLeakage", String(waterLeakage).c_str());
-  client.publish(MQTT_TOPIC "/FillingInProgress", String(waterFillingInProgress).c_str());
-  client.publish(MQTT_TOPIC "/PauseWaterFilling", String(pauseWaterFilling).c_str());
-  client.publish(MQTT_TOPIC "/Temperature", temperaturePayload);
-  client.publish(MQTT_TOPIC "/Humidity", humidityPayload);
-  client.publish(MQTT_TOPIC "/WaterPh", waterPhPayload);
+  client.publish(mqttTopic "/LowWaterLevel", String(lowWaterLevel).c_str());
+  client.publish(mqttTopic "/MedWaterLevel", String(medWaterLevel).c_str());
+  client.publish(mqttTopic "/HighWaterLevel", String(highWaterLevel).c_str());
+  client.publish(mqttTopic "/WaterLeakage", String(waterLeakage).c_str());
+  client.publish(mqttTopic "/FillingInProgress", String(waterFillingInProgress).c_str());
+  client.publish(mqttTopic "/PauseWaterFilling", String(pauseWaterFilling).c_str());
+  client.publish(mqttTopic "/Temperature", temperaturePayload);
+  client.publish(mqttTopic "/Humidity", humidityPayload);
+  client.publish(mqttTopic "/WaterPh", waterPhPayload);
 
 }
