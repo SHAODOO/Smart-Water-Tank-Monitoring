@@ -184,6 +184,13 @@ void loop()
   client.loop();
   delay(5000); 
 
+  int lowWaterLevelInt = lowWaterLevel ? 1 : 0;
+  int medWaterLevelInt = medWaterLevel ? 1 : 0;
+  int highWaterLevelInt = highWaterLevel ? 1 : 0;
+  int waterLeakageInt = waterLeakage ? 1 : 0;
+  int waterFillingInProgressInt = waterFillingInProgress ? 1 : 0;
+  int pauseWaterFillingInt = pauseWaterFilling ? 1 : 0;
+
   char temperaturePayload[10];
   char humidityPayload[10];
   char waterPhPayload[10]; 
@@ -192,14 +199,14 @@ void loop()
   sprintf(humidityPayload, "%.2f", humidity);
   sprintf(waterPhPayload, "%.2f", waterPh);
 
-  client.publish(mqttTopic "/LowWaterLevel", String(lowWaterLevel).c_str());
-  client.publish(mqttTopic "/MedWaterLevel", String(medWaterLevel).c_str());
-  client.publish(mqttTopic "/HighWaterLevel", String(highWaterLevel).c_str());
-  client.publish(mqttTopic "/WaterLeakage", String(waterLeakage).c_str());
-  client.publish(mqttTopic "/FillingInProgress", String(waterFillingInProgress).c_str());
-  client.publish(mqttTopic "/PauseWaterFilling", String(pauseWaterFilling).c_str());
-  client.publish(mqttTopic "/Temperature", temperaturePayload);
-  client.publish(mqttTopic "/Humidity", humidityPayload);
-  client.publish(mqttTopic "/WaterPh", waterPhPayload);
+  client.publish(MQTT_TOPIC "/LowWaterLevel", String(lowWaterLevelInt).c_str());
+  client.publish(MQTT_TOPIC "/MedWaterLevel", String(medWaterLevelInt).c_str());
+  client.publish(MQTT_TOPIC "/HighWaterLevel", String(highWaterLevelInt).c_str());
+  client.publish(MQTT_TOPIC "/WaterLeakage", String(waterLeakageInt).c_str());
+  client.publish(MQTT_TOPIC "/FillingInProgress", String(waterFillingInProgressInt).c_str());
+  client.publish(MQTT_TOPIC "/PauseWaterFilling", String(pauseWaterFillingInt).c_str());
+  client.publish(MQTT_TOPIC "/Temperature", temperaturePayload);
+  client.publish(MQTT_TOPIC "/Humidity", humidityPayload);
+  client.publish(MQTT_TOPIC "/WaterPh", waterPhPayload);
 
 }
