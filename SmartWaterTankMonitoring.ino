@@ -19,6 +19,7 @@ const int analogPhMeterPin = A0;
 const int dhtSensorPin = 42;
 const int buttonPin = 14;
 const int servoMotorPin = 47;
+const int rainSensorPin = 4;
 
 //input sensor
 #define DHTTYPE DHT11
@@ -44,6 +45,7 @@ bool waterFillingInProgress = false;
 bool pauseWaterFilling = false;
 bool sameState = false;
 bool serverEmergencyStop = false;
+int waterLeakage = 0;
 
 void setupWifi() {
 
@@ -76,6 +78,7 @@ void setup()
   pinMode(medLevelLiquidSensorPin, INPUT);
   pinMode(highLevelLiquidSensorPin, INPUT);
   pinMode(buttonPin, INPUT);
+  pinMode(rainSensorPin, INPUT);
   myServo.attach(servoMotorPin);  
   client.setServer(MQTT_SERVER, MQTT_PORT);
 }
@@ -132,7 +135,6 @@ void loop()
       serverEmergencyStop = false;
   }
 
-  //TO DO LIST - Broken Sensor Detecting
   if (lowWaterLevel == 0 && medWaterLevel == 0 && highWaterLevel == 0) {
     waterLevel = 0; // No water
     if (!pauseWaterFilling){
@@ -166,6 +168,7 @@ void loop()
   waterPh = ph.readPH(voltage); // convert voltage to pH without temperature compensation
   temperature = dht.readTemperature();
   humidity = dht.readHumidity();
+  waterLeakage = !digitalRead(rainSensorPin);
 
   Serial.print("pH:");
   Serial.println(waterPh);
@@ -179,20 +182,34 @@ void loop()
   Serial.println(pauseWaterFilling);
   Serial.print("filling:");
   Serial.println(waterFillingInProgress);
+  Serial.print("Water Leakage:");
+  Serial.println(waterLeakage);
   Serial.println();
 
-  void loop()
-  {
-    if (!client.connected())
-    {
+  if (!client.connected()) {
       reconnect();
-    }
-    client.loop();
-    delay(5000); // adjust the delay according to your requirements
-    float temperature = dht.readTemperature();
-    char payload[10];
-    sprintf(payload, "%.2f", temperature);
-    client.publish(MQTT_TOPIC, payload);
   }
-  
+  client.loop();
+  delay(5000); // adjust the delay according to your requirements
+
+  // Format float values with 2 decimal places
+  char temperaturePayload[10];
+  char humidityPayload[10];
+  char waterPhPayload[10]; 
+
+  sprintf(temperaturePayload, "%.2f", temperature);
+  sprintf(humidityPayload, "%.2f", humidity);
+  sprintf(waterPhPayload, "%.2f", waterPh);
+
+  // Publish the formatted values
+  client.publish(MQTT_TOPIC "/LowWaterLevel", String(lowWaterLevel).c_str());
+  client.publish(MQTT_TOPIC "/MedWaterLevel", String(medWaterLevel).c_str());
+  client.publish(MQTT_TOPIC "/HighWaterLevel", String(highWaterLevel).c_str());
+  client.publish(MQTT_TOPIC "/WaterLeakage", String(waterLeakage).c_str());
+  client.publish(MQTT_TOPIC "/FillingInProgress", String(waterFillingInProgress).c_str());
+  client.publish(MQTT_TOPIC "/PauseWaterFilling", String(pauseWaterFilling).c_str());
+  client.publish(MQTT_TOPIC "/Temperature", temperaturePayload);
+  client.publish(MQTT_TOPIC "/Humidity", humidityPayload);
+  client.publish(MQTT_TOPIC "/WaterPh", waterPhPayload);
+
 }
